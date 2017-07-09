@@ -1,12 +1,16 @@
 # Enhanced-k-Nearest-Neighbors
 
+This is an implementation of k-nearest neighbors algorithm for multi-labeled documents
+
+
+
 
 ### ToDo List
 
 
 - [ ] pre-processing code ( order might change for this task)
 
-- [ ] BM25 similarity to compare two documents
+- [ ] implement BM25 similarity to compare two documents
 
 - [ ] implement k-NN
 
