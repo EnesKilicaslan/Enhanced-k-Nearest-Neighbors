@@ -1,6 +1,6 @@
 # Enhanced-k-Nearest-Neighbors
 
-This is an implementation of k-nearest neighbors algorithm for multi-labeled documents
+This is an implementation of enhanced k-nearest neighbors algorithm for multi-labeled documents
 
 
 
