@@ -7,8 +7,9 @@ This is an implementation of k-nearest neighbors algorithm for multi-labeled doc
 
 ### ToDo List
 
+- [ ] read necessary metarials to understand the concept
 
-- [ ] pre-processing code ( order might change for this task)
+- [ ] pre-processing code ( order might change for this task )
 
 - [ ] implement BM25 similarity to compare two documents
 
@@ -22,4 +23,6 @@ This is an implementation of k-nearest neighbors algorithm for multi-labeled doc
 
 - [ ] running the implementation on the datasets and comparing results
 
-- [ ] changing the implementation to multi-threaded
+- [ ] changing the implementation to multi-threaded ( this task might not be done on time )
+
+- [ ] writing report explaining what and how  I did
