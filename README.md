@@ -1,14 +1,15 @@
 # Enhanced-k-Nearest-Neighbors
 
-This is an implementation of k-nearest neighbors algorithm for multi-labeled documents
+This is an implementation of enhanced k-nearest neighbors algorithm for multi-labeled documents
 
 
 
 
 ### ToDo List
 
+- [ ] read necessary metarials to understand the concept
 
-- [ ] implement pre-processing code ( order might change for this task)
+- [ ] pre-processing code ( order might change for this task )
 
 - [ ] implement BM25 similarity to compare two documents
 
@@ -18,8 +19,10 @@ This is an implementation of k-nearest neighbors algorithm for multi-labeled doc
 
 - [ ] implement thresholding strategy
 
-- [ ] use inverted index to make k-NN faster
+- [ ] use inverted index to make make k-NN faster
 
 - [ ] running the implementation on the datasets and comparing results
 
-- [ ] changing the implementation to multi-threaded
+- [ ] changing the implementation to multi-threaded ( this task might not be done on time )
+
+- [ ] writing report explaining what and how  I did
