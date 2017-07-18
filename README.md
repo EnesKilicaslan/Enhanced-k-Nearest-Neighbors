@@ -7,7 +7,7 @@ This is an implementation of enhanced k-nearest neighbors algorithm for multi-la
 
 ### ToDo List
 
-- [ ] read necessary metarials to understand the concept
+- [x] read necessary metarials to understand the concept
 
 - [ ] pre-processing code ( order might change for this task )
 
