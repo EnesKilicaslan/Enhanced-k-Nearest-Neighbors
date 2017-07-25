@@ -18,7 +18,7 @@ int main() {
 
     //eKnn.idf("60522");
     cout << " Lengths: " << endl;
-    //eKnn.printLenghts();
+    eKnn.printLenghts();
 
 
 

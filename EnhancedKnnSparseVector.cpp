@@ -2,7 +2,6 @@
 // Created by Enes Kılıçaslan on 15/07/17.
 //
 
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -12,11 +11,19 @@
 #include "EnhancedKnnSparseVector.h"
 using namespace std;
 
+
+const double EnhancedKnnSparseVector::K1 = 0.25;
+const double EnhancedKnnSparseVector::b  = 0.75;
+
+
 EnhancedKnnSparseVector::EnhancedKnnSparseVector(const string &inputFileName)
         : inputFileName(inputFileName) {
 
     this->docCounter = 0;
+    this->totalLenOfDocs = 0;
+    this->la = 0.0;
 }
+
 
 void EnhancedKnnSparseVector::fillVectors() {
 
@@ -45,7 +52,7 @@ void EnhancedKnnSparseVector::fillVectors() {
 
         labels.push_back(labels_local); //append labels
         docs.push_back(docs_local);
-        lenghts.push_back(0); //fist initialize lenght of the document to zero
+        lengths.push_back(0); //fist initialize lenght of the document to zero
 
         //parse word and occurance
         while(getline(ss_main, tok_main, ' ')){
@@ -60,7 +67,8 @@ void EnhancedKnnSparseVector::fillVectors() {
                 //cout << "index Debug " << word << " " << word_index << "docs counter " << doc_counter <<  endl;
                 //cout << "lend docs: " << docs.size() << endl;
                 docs[this->docCounter][word_index] = occurance;
-                lenghts[this->docCounter] += occurance;
+                lengths[this->docCounter] += occurance;
+                totalLenOfDocs += occurance;
 
             } else {
                 words.push_back(word);
@@ -71,7 +79,8 @@ void EnhancedKnnSparseVector::fillVectors() {
                     docs[i].push_back(0);  // so make it 0 for the other documents
 
                 docs[this->docCounter][words.size() - 1] = occurance; // Bag of words (not binary)
-                lenghts[this->docCounter] += occurance;
+                lengths[this->docCounter] += occurance;
+                totalLenOfDocs += occurance;
             }
         }
 
@@ -79,6 +88,7 @@ void EnhancedKnnSparseVector::fillVectors() {
         this->docCounter += 1;
     }
 
+    setLa(totalLenOfDocs/docCounter); //calculate average document length once
 }
 
 void EnhancedKnnSparseVector::printVectors() const {
@@ -104,38 +114,91 @@ void EnhancedKnnSparseVector::printVectors() const {
 
 }
 
+
+double EnhancedKnnSparseVector::similarityBM25(std::vector<int> const &s1, std::vector<int> const &s2 ) const{
+
+    double result=0.0;
+
+    if(s1.size() != s2.size())
+        return  -1; // sizes must be the same
+
+    for(int i=0; i<s1.size(); ++i){
+        if(s1[i]>0 && s2[i] > 0) {
+            /*cout << "ei: " << i << endl;
+            cout << "idf: " << idf(i) << endl;
+            cout << "s1:  " << fPrime(i, s1) << endl;
+            cout << "s2:  " << fPrime(i, s2) << endl;*/
+            result += fPrime(i,s1) *  fPrime(i,s2) * idf(i);
+        }
+
+
+    }
+
+    return result;
+}
+
+
+/**
+ *
+ *                 (k1 + 1) f(w,s)
+ * f'(w,s) = -----------------------------
+ *                                |s|
+ *              k1 + ( 1 - b + b ----- )
+ *                                la
+ */
 double EnhancedKnnSparseVector::fPrime(std::string w, std::vector<int> s) const {
     int fws;
 
     int indx = EnesKilicaslanCommonOperations::contains(&words, w);
     //check if the word exist in our corpus
     //we are almost sure that it will exist, but security first!
-    if (indx == -1) //TODO think about these return -1's again
+    if (indx == -1) //TODO think about these return -1's again, 0 might be bettter
         return -1;
 
     fws = s[indx];
 
-
-    return ((K1 + 1) * fws) / (K1 + (1 -b));
-
-
-
-
-
-
-
+    return ((K1 + 1) * fws) / (K1 + (1 -b + b * s.size() / la ));
 }
 
 
+//this overloaded method takes directly index of the word
+double EnhancedKnnSparseVector::fPrime(int indx, std::vector<int> s) const {
+    int fws = s[indx];
+    return ((K1 + 1) * fws) / (K1 + (1 -b + b * s.size() / la ));
+}
+
+
+
 /**
-*                   N - n(w) + 0.5
-*  idf(w) = log ----------------------
-*                     n(w) + 0.5
-* */
+ * @ref: http://opensourceconnections.com/blog/2015/10/16/bm25-the-next-generation-of-lucene-relevation/
+ *
+ * Trick: adding 1 before taking log, prevents us to get negeative result like said in referance
+ *
+ *
+ *                    N - n(w) + 0.5
+ *  idf(w) = log ( ------------------- + 1 )
+ *                      n(w) + 0.5
+**/
 double EnhancedKnnSparseVector::idf(std::string w) const {
     int nw = n(w);
+    cout << "idf done" << endl;
+    return log(((docCounter - nw + 0.5) / (nw + 0.5)) + 1);
+}
 
-    return log((docCounter - nw + 0.5) / (nw + 0.5));
+
+//this overloaded method takes directly index of the word
+double EnhancedKnnSparseVector::idf(int wIndex) const {
+    int nw = n(wIndex);
+    double result = log10(((docCounter - nw + 0.5) / (nw + 0.5)) + 1);
+
+    /*cout << "*********" << endl;
+    cout << "nw: "<< nw << " N: " << docCounter << endl;
+    cout << "result: " << result << endl;
+    cout << "up: " << (docCounter - nw + 0.5) << endl;
+    cout << "down: " << (nw + 0.5) << endl;
+    cout << "*********" << endl;
+*/
+    return result;
 }
 
 int EnhancedKnnSparseVector::n(std::string w) const {
@@ -156,11 +219,28 @@ int EnhancedKnnSparseVector::n(std::string w) const {
     return result;
 }
 
+//this overloaded method takes directly index of the word
+int EnhancedKnnSparseVector::n(int indx) const {
+    int result = 0;
+
+    for(int i=0; i< docCounter; ++i) {
+        int occ = docs[i][indx];
+        if ( occ > 0)
+            result += 1;
+    }
+
+    return result;
+}
 
 void EnhancedKnnSparseVector::printLenghts() const {
-    for(int i=0; i < docCounter; ++i)
-        cout << lenghts[i] << endl;
+
+    cout << "similarity: " <<  similarityBM25(docs[1], docs[2]) << endl;
 }
+
+void EnhancedKnnSparseVector::setLa(double la) {
+    this->la = la;
+}
+
 
 
 namespace EnesKilicaslanCommonOperations{
