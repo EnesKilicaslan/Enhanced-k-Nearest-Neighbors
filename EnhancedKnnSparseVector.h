@@ -7,11 +7,14 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
+
 
 class EnhancedKnnSparseVector {
 
 public:
-    EnhancedKnnSparseVector(const std::string &inputFileName);
+    EnhancedKnnSparseVector(int k, double alpha, const std::string &inputFileName);
 
     void fillVectors();
     void printVectors() const;
@@ -26,6 +29,11 @@ public:
 
     double fPrime(std::string w, std::vector<int> s) const; // TODO will be private
     double fPrime(int  wIndex, std::vector<int> s) const;// directly takes index of word
+
+
+    // takes sparse vector that contains a notion for each word in the corpus
+    // So its size must be the same as words vector variable field
+    std::vector<std::string> enhancedKnn(const std::vector<int> & test) const;
 
 
     void printLenghts() const;
@@ -46,6 +54,9 @@ private:
     static const double K1, b; //constants for BM25 similarity
     long totalLenOfDocs; //total lenght of training documents
     double la;  //average lenght of training documents
+
+    int k; // this is the 'famous' k
+    double alpha;
 };
 
 
@@ -56,6 +67,11 @@ namespace EnesKilicaslanCommonOperations{
 
     template <typename T>
     std::string  numberToString(T pNumber);
+
+    //https://stackoverflow.com/questions/18112773/sorting-a-vector-of-pairs
+    bool pairCompare(const std::pair<int, double >& firstElem,
+                     const std::pair<int, double >& secondElem);
+
 
 }
 

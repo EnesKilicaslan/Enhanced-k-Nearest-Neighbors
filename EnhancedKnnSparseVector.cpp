@@ -6,6 +6,9 @@
 #include <fstream>
 #include <sstream>
 #include <math.h>
+#include <set>
+
+
 
 
 #include "EnhancedKnnSparseVector.h"
@@ -16,9 +19,10 @@ const double EnhancedKnnSparseVector::K1 = 0.25;
 const double EnhancedKnnSparseVector::b  = 0.75;
 
 
-EnhancedKnnSparseVector::EnhancedKnnSparseVector(const string &inputFileName)
+EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, double alpha, const string &inputFileName)
         : inputFileName(inputFileName) {
-
+    this->k = k;
+    this->alpha = alpha;
     this->docCounter = 0;
     this->totalLenOfDocs = 0;
     this->la = 0.0;
@@ -114,7 +118,6 @@ void EnhancedKnnSparseVector::printVectors() const {
 
 }
 
-
 double EnhancedKnnSparseVector::similarityBM25(std::vector<int> const &s1, std::vector<int> const &s2 ) const{
 
     double result=0.0;
@@ -130,13 +133,10 @@ double EnhancedKnnSparseVector::similarityBM25(std::vector<int> const &s1, std::
             cout << "s2:  " << fPrime(i, s2) << endl;*/
             result += fPrime(i,s1) *  fPrime(i,s2) * idf(i);
         }
-
-
     }
 
     return result;
 }
-
 
 /**
  *
@@ -160,14 +160,11 @@ double EnhancedKnnSparseVector::fPrime(std::string w, std::vector<int> s) const 
     return ((K1 + 1) * fws) / (K1 + (1 -b + b * s.size() / la ));
 }
 
-
 //this overloaded method takes directly index of the word
 double EnhancedKnnSparseVector::fPrime(int indx, std::vector<int> s) const {
     int fws = s[indx];
     return ((K1 + 1) * fws) / (K1 + (1 -b + b * s.size() / la ));
 }
-
-
 
 /**
  * @ref: http://opensourceconnections.com/blog/2015/10/16/bm25-the-next-generation-of-lucene-relevation/
@@ -185,7 +182,6 @@ double EnhancedKnnSparseVector::idf(std::string w) const {
     return log(((docCounter - nw + 0.5) / (nw + 0.5)) + 1);
 }
 
-
 //this overloaded method takes directly index of the word
 double EnhancedKnnSparseVector::idf(int wIndex) const {
     int nw = n(wIndex);
@@ -197,7 +193,7 @@ double EnhancedKnnSparseVector::idf(int wIndex) const {
     cout << "up: " << (docCounter - nw + 0.5) << endl;
     cout << "down: " << (nw + 0.5) << endl;
     cout << "*********" << endl;
-*/
+    */
     return result;
 }
 
@@ -237,11 +233,95 @@ void EnhancedKnnSparseVector::printLenghts() const {
     cout << "similarity: " <<  similarityBM25(docs[1], docs[2]) << endl;
 }
 
+
+// takes sparse vector that contains a notion for each word in the corpus
+// So its size must be the same as words vector variable field
+std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<int> & testDocument) const {
+
+    std::vector< std::pair< int, double> > neighborSimPairs;
+    set<string> candidateClasses;
+    map<string , double> labelScores;
+
+
+    if( testDocument.size() != words.size()) {
+        cerr << "Error for test Document" << endl;
+        exit(1);
+    }
+
+
+    //get the first k documents in order
+    for(int i=0; i<this->k; ++i)
+        neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocument, docs[i])) ) ;
+
+    //sort documents
+    std::sort(neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
+
+    // traverse all the documents in the training set
+    // and replace the new document if there is lower similar document
+    // in the k nearest neighbors
+    for(int i=k; i<docCounter ; ++i){
+
+        neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocument, docs[i])) ) ;
+        std::sort(neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
+
+        //remove last element
+        //we always keep first k documents!
+        neighborSimPairs.erase(neighborSimPairs.end());
+    }
+
+    /*
+     * k nearest neigbors are found!
+     * now applying weighted voting on candidate classes
+     * accourding to the following formula
+     *
+     *                     ---`
+     * score(c|se) =       \  y(si, c)BM25(si, se)^a
+     *                     /__,
+    */
+
+    //put candidate classes in a set to make them unique
+    for (int j = 0; j < neighborSimPairs.size(); ++j) {
+
+        int labIndex = neighborSimPairs[j].first;
+
+        for (int i = 0; i < labels[labIndex].size() ; ++i)
+            candidateClasses.insert(labels[labIndex][i]);
+    }
+
+    //calculate score for each candidate class
+    /**
+     * for each candidate class
+     *      for each document in the k-nearest neighbors
+     *          calculate score
+     */
+    for(set<string>::const_iterator it= candidateClasses.begin(); it != candidateClasses.end(); ++it){
+
+        labelScores[*it] = 0.0;
+
+        for (int j = 0; j < neighborSimPairs.size(); ++j) {
+
+            int labIndex = neighborSimPairs[j].first;
+
+            //if the document contains candidate class
+            if (std::find(labels[labIndex].begin(), labels[labIndex].end(), *it) != labels[labIndex].end()){
+                double sim = neighborSimPairs[j].second;
+
+                labelScores[*it] += pow(sim,alpha);
+            }
+        }
+    }
+
+
+
+
+
+
+
+}
+
 void EnhancedKnnSparseVector::setLa(double la) {
     this->la = la;
 }
-
-
 
 namespace EnesKilicaslanCommonOperations{
 
@@ -262,6 +342,19 @@ namespace EnesKilicaslanCommonOperations{
         oOStrStream << pNumber;
         return oOStrStream.str();
     }
+
+
+    /**
+     * Comparator for <id, similarity> (int, double) pair
+     * @ref: https://stackoverflow.com/questions/18112773/sorting-a-vector-of-pairs
+     * @return
+     */
+    bool pairCompare(const std::pair<int, double >& firstElem,
+                     const std::pair<int, double >& secondElem) {
+        return firstElem.second > secondElem.second;
+    }
+
+
 
 }
 
