@@ -72,6 +72,9 @@ namespace EnesKilicaslanCommonOperations{
     bool pairCompare(const std::pair<int, double >& firstElem,
                      const std::pair<int, double >& secondElem);
 
+    bool pairCompareStr(const std::pair<std::string, double >& firstElem,
+                     const std::pair<std::string, double >& secondElem);
+
 
 }
 

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <math.h>
 #include <set>
+#include <algorithm>
 
 
 
@@ -230,43 +231,52 @@ int EnhancedKnnSparseVector::n(int indx) const {
 
 void EnhancedKnnSparseVector::printLenghts() const {
 
-    cout << "similarity: " <<  similarityBM25(docs[1], docs[2]) << endl;
+    cout << "Labels:" << endl;
+    vector<string> res = enhancedKnn(docs[2]);
+
+    for(int i=0; i< res.size(); ++i)
+        cout << res[i] << " ";
 }
 
 
 // takes sparse vector that contains a notion for each word in the corpus
 // So its size must be the same as words vector variable field
 std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<int> & testDocument) const {
-
     std::vector< std::pair< int, double> > neighborSimPairs;
     set<string> candidateClasses;
     map<string , double> labelScores;
-
+    vector<double> tresholds;
+    vector<pair<string, double> > classScores; // this will be a copy of map lavelScores in order to traverse easyly
+    vector<string> result; // the result labels
 
     if( testDocument.size() != words.size()) {
         cerr << "Error for test Document" << endl;
         exit(1);
     }
-
-
     //get the first k documents in order
-    for(int i=0; i<this->k; ++i)
+    for(int i=0; i<this->k && i < docCounter; ++i)
         neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocument, docs[i])) ) ;
 
     //sort documents
-    std::sort(neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
+    sort( neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
 
     // traverse all the documents in the training set
     // and replace the new document if there is lower similar document
     // in the k nearest neighbors
     for(int i=k; i<docCounter ; ++i){
-
         neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocument, docs[i])) ) ;
-        std::sort(neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
-
+        sort( neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
         //remove last element
         //we always keep first k documents!
-        neighborSimPairs.erase(neighborSimPairs.end());
+        neighborSimPairs.pop_back();
+
+    }
+
+    cout << "Size of words in the corpus: " << words.size() << endl ;
+
+    cout << "Neigbors: " << endl;
+    for (int m = 0; m < neighborSimPairs.size(); ++m) {
+        cout << neighborSimPairs[m].first << " - " << neighborSimPairs[m].second << endl;
     }
 
     /*
@@ -278,15 +288,17 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<
      * score(c|se) =       \  y(si, c)BM25(si, se)^a
      *                     /__,
     */
-
     //put candidate classes in a set to make them unique
     for (int j = 0; j < neighborSimPairs.size(); ++j) {
-
         int labIndex = neighborSimPairs[j].first;
 
         for (int i = 0; i < labels[labIndex].size() ; ++i)
             candidateClasses.insert(labels[labIndex][i]);
     }
+
+    cout << "Candidate Classes: " << endl;
+    for(set<string>::const_iterator it= candidateClasses.begin(); it != candidateClasses.end(); ++it)
+        cout << *it<< " ";
 
     //calculate score for each candidate class
     /**
@@ -295,7 +307,6 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<
      *          calculate score
      */
     for(set<string>::const_iterator it= candidateClasses.begin(); it != candidateClasses.end(); ++it){
-
         labelScores[*it] = 0.0;
 
         for (int j = 0; j < neighborSimPairs.size(); ++j) {
@@ -311,12 +322,54 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<
         }
     }
 
+    /**
+     * Weighted voting is implemented above
+     * scores for each candidate classes are stored in labelScores map (dictionary)
+     *
+     *
+     * Distinctive Score-Cut Thresholding Strategy
+     *
+     *                  {  1   Si/Si >= Ti
+     * Score-Cut(ci) = {
+     *                  {  0   otherwise
+     *
+     *                  t1 is 1, because we always select top label
+     */
+    //initialize tresholds
+    for(int i=0; i<labelScores.size(); ++i){
+        tresholds.push_back(1-i*0.05);
+    }
+
+    //export the map to vector of pairs
+    copy(labelScores.begin(),
+         labelScores.end(),
+         back_inserter<vector<pair<string, double > > >(classScores));
+
+    //sort  classes vector in descending order with respect to scores of each class
+    sort(classScores.begin(), classScores.end(), EnesKilicaslanCommonOperations::pairCompareStr);
+
+    cout << endl << "weighted voting: " << endl;
+    for (int i1 = 0; i1 < classScores.size(); ++i1) {
+        cout << classScores[i1].first << " - " << classScores[i1].second << endl;
+    }
+
+//  cout << "result size: " << result.size() <<  endl;
+
+    for (int l = 0; l <classScores.size() ; ++l)
+        if(classScores[l].second/ classScores[0].second >= tresholds[l] ) {
+            /*cout << "label: " << classScores[l].first << "  score: "
+                 << classScores[l].second << "  treshold: " << tresholds[l] << " ratio: "
+                 << classScores[l].second/ classScores[0].second<< endl;*/
+
+            result.push_back(classScores[l].first);
+        }
+        else
+            break; // Note that δ(ci) is considered only if δ(c1),δ(c2),. . . ,δ(ci−1) all output 1.
+
+    cout << "result size: " << result.size() <<  endl;
 
 
-
-
-
-
+    return result;
 }
 
 void EnhancedKnnSparseVector::setLa(double la) {
@@ -354,6 +407,10 @@ namespace EnesKilicaslanCommonOperations{
         return firstElem.second > secondElem.second;
     }
 
+    bool pairCompareStr(const std::pair<string, double >& firstElem,
+                     const std::pair<string, double >& secondElem) {
+        return firstElem.second > secondElem.second;
+    }
 
 
 }
