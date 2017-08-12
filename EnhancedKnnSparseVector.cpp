@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
 #include <math.h>
 #include <set>
 #include <algorithm>
@@ -16,14 +17,14 @@
 using namespace std;
 
 
-const double EnhancedKnnSparseVector::K1 = 0.25;
-const double EnhancedKnnSparseVector::b  = 0.75;
+const double EnhancedKnnSparseVector::K1 = 6.0;
+const double EnhancedKnnSparseVector::b  = 0.9;
 
 
-EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, double alpha, const string &inputFileName)
-        : inputFileName(inputFileName) {
+EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, const std::string &trainFileName, const std::string &testFileName)
+        : trainFileName(trainFileName) {
     this->k = k;
-    this->alpha = alpha;
+    this->alpha =0.3; //k/10;
     this->docCounter = 0;
     this->totalLenOfDocs = 0;
     this->la = 0.0;
@@ -32,7 +33,7 @@ EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, double alpha, const stri
 
 void EnhancedKnnSparseVector::fillVectors() {
 
-    ifstream input(inputFileName);
+    ifstream input(trainFileName);
     string line;
     getline( input, line ); // skip header
 
@@ -238,7 +239,6 @@ void EnhancedKnnSparseVector::printLenghts() const {
         cout << res[i] << " ";
 }
 
-
 // takes sparse vector that contains a notion for each word in the corpus
 // So its size must be the same as words vector variable field
 std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<int> & testDocument) const {
@@ -337,7 +337,7 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<
      */
     //initialize tresholds
     for(int i=0; i<labelScores.size(); ++i){
-        tresholds.push_back(1-i*0.05);
+        tresholds.push_back(1-i*0.00000000000002);
     }
 
     //export the map to vector of pairs
@@ -348,32 +348,108 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(const std::vector<
     //sort  classes vector in descending order with respect to scores of each class
     sort(classScores.begin(), classScores.end(), EnesKilicaslanCommonOperations::pairCompareStr);
 
-    cout << endl << "weighted voting: " << endl;
     for (int i1 = 0; i1 < classScores.size(); ++i1) {
         cout << classScores[i1].first << " - " << classScores[i1].second << endl;
     }
 
-//  cout << "result size: " << result.size() <<  endl;
+    //  cout << "result size: " << result.size() <<  endl;
 
     for (int l = 0; l <classScores.size() ; ++l)
-        if(classScores[l].second/ classScores[0].second >= tresholds[l] ) {
+        if(classScores[l].second / classScores[0].second >= tresholds[l] ) {
             /*cout << "label: " << classScores[l].first << "  score: "
                  << classScores[l].second << "  treshold: " << tresholds[l] << " ratio: "
                  << classScores[l].second/ classScores[0].second<< endl;*/
-
             result.push_back(classScores[l].first);
         }
         else
             break; // Note that δ(ci) is considered only if δ(c1),δ(c2),. . . ,δ(ci−1) all output 1.
 
     cout << "result size: " << result.size() <<  endl;
-
-
     return result;
+}
+
+void EnhancedKnnSparseVector::runTest(){
+
+    ofstream output;
+    output.open("./result.txt");
+
+    output << "labels" << endl;
+
+    for(int i=0; i<testDocs.size(); ++i){
+        vector<string> res = enhancedKnn(testDocs[i]);
+
+        for (int j = 0; j < res.size() ; ++j)
+            output << res[j] << " ";
+
+        output << endl;
+    }
+
 }
 
 void EnhancedKnnSparseVector::setLa(double la) {
     this->la = la;
+}
+
+void EnhancedKnnSparseVector::fillTestVectors(){
+    ifstream input(this->testFileName);
+    string line;
+    getline( input, line ); // skip header
+    int testDocCounter = 0;
+
+    cout << line << endl;
+
+    while( getline( input, line ) ) {
+        cout << line << endl;
+
+        if (line == "\n")
+            continue; //skip empty lines
+
+        vector<int> docs_local(words.size(), 0);
+
+        stringstream ss_main(line); // Turn the string into a stream.
+        string tok_main;
+        getline(ss_main, tok_main, ' ');
+        string tok_lab;
+        stringstream ss_lab(tok_main);
+
+        testDocs.push_back(docs_local);
+
+        //parse word and occurance
+        while (getline(ss_main, tok_main, ' ')) {
+            //cout <<"debug 2" << endl;
+
+            long int pos = tok_main.find(':');
+            string word = tok_main.substr(0, pos);
+            int occurance = stoi(tok_main.substr(pos + 1, 1));
+            int word_index = EnesKilicaslanCommonOperations::contains(&words, word);
+
+            if (word_index == -1)
+                continue; //this word has never seen before so, it does not have any effect
+            else
+                testDocs[testDocCounter][word_index] += occurance;
+
+        }
+
+
+        testDocCounter += 1;
+    }
+
+    cout << "***test vectors: " << endl;
+    std::vector< std::vector<int> >::const_iterator row;
+    std::vector<int>::const_iterator col;
+
+    for (row = this->testDocs.begin(); row != this->testDocs.end(); ++row)
+    {
+        for (col = row->begin(); col != row->end(); ++col)
+        {
+
+            printf("%8s | ", EnesKilicaslanCommonOperations::numberToString(*col).c_str());
+        }
+        cout << endl;
+    }
+
+
+
 }
 
 namespace EnesKilicaslanCommonOperations{

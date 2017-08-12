@@ -14,7 +14,7 @@
 class EnhancedKnnSparseVector {
 
 public:
-    EnhancedKnnSparseVector(int k, double alpha, const std::string &inputFileName);
+    EnhancedKnnSparseVector(int k, const std::string &trainFileName, const std::string &testFileName);
 
     void fillVectors();
     void printVectors() const;
@@ -30,26 +30,29 @@ public:
     double fPrime(std::string w, std::vector<int> s) const; // TODO will be private
     double fPrime(int  wIndex, std::vector<int> s) const;// directly takes index of word
 
+    void fillTestVectors();
 
     // takes sparse vector that contains a notion for each word in the corpus
     // So its size must be the same as words vector variable field
     std::vector<std::string> enhancedKnn(const std::vector<int> & test) const;
-
+    void runTest();
 
     void printLenghts() const;
-
     void setLa(double la);
 
 
 private:
 
     int docCounter;
-    std::string inputFileName;
+    std::string trainFileName;
+    std::string testFileName;
 
     std::vector< std::vector < std::string > > labels; //labels for each document
     std::vector< std::string > words; //column, all of the words in the corpus
     std::vector< std::vector < int > > docs; //(0, vector<int>(0)); //row, vector for each document | each initalized to 0
     std::vector< int > lengths; //lengths of the training documents
+
+    std::vector< std::vector <int> > testDocs;
 
     static const double K1, b; //constants for BM25 similarity
     long totalLenOfDocs; //total lenght of training documents
