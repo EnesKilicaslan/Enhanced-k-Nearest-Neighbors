@@ -9,15 +9,15 @@ This is an implementation of enhanced k-nearest neighbors algorithm for multi-la
 
 - [x] read necessary metarials to understand the concept
 
-- [ ] pre-processing code ( order might change for this task )
+- [x] pre-processing code ( order might change for this task )
 
-- [ ] implement BM25 similarity to compare two documents
+- [x] implement BM25 similarity to compare two documents
 
-- [ ] implement k-NN
+- [x] implement k-NN
 
-- [ ] implement weighted vote scheme
+- [x] implement weighted vote scheme
 
-- [ ] implement thresholding strategy
+- [x] implement thresholding strategy
 
 - [ ] use inverted index to make make k-NN faster
 
