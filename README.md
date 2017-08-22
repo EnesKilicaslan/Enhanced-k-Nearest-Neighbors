@@ -19,10 +19,14 @@ This is an implementation of enhanced k-nearest neighbors algorithm for multi-la
 
 - [x] implement thresholding strategy
 
-- [ ] use inverted index to make make k-NN faster
+- [x] add --help command 
+
+- [ ] write documentation
+
+- [ ] use inverted index to make k-NN faster
 
 - [ ] running the implementation on the datasets and comparing results
 
-- [ ] changing the implementation to multi-threaded ( this task might not be done on time )
+- [ ] changing the implementation to multi-threaded
 
 - [ ] writing report explaining what and how  I did
