@@ -1,7 +1,3 @@
-//
-// Created by Enes Kılıçaslan on 15/07/17.
-//
-
 #ifndef EKNNV3_ENHANCEDKNNSPARSEVECTOR_H
 #define EKNNV3_ENHANCEDKNNSPARSEVECTOR_H
 
@@ -10,6 +6,8 @@
 #include <map>
 #include <algorithm>
 
+#define OUT_VEC_FILE_NAME "train_vectors.txt"
+
 
 class EnhancedKnnSparseVector {
 
@@ -17,29 +15,28 @@ public:
     EnhancedKnnSparseVector(int k, const std::string &trainFileName, const std::string &testFileName);
 
     void fillVectors();
-    void printVectors() const;
+    void saveVectors() const;
 
-    double similarityBM25(std::vector<int> const &s1, std::vector<int> const &s2 ) const;
+    double similarityBM25(std::vector<bool> const &s1, int len1, std::vector<bool> const &s2, int len2 ) const;
 
-    int n(std::string w) const; // TODO will be private
+    // TODO will be private
     int n(int wIndex) const; // directly takes index of the word
 
-    double idf(std::string w) const;// TODO will be private
     double idf(int wIndex) const; // directly takes index of the word
 
-    double fPrime(std::string w, std::vector<int> s) const; // TODO will be private
-    double fPrime(int  wIndex, std::vector<int> s) const;// directly takes index of word
+    double fPrime(std::vector<bool > s, int len) const;// directly takes index of word
 
     void fillTestVectors();
 
     // takes sparse vector that contains a notion for each word in the corpus
     // So its size must be the same as words vector variable field
-    std::vector<std::string> enhancedKnn(const std::vector<int> & test) const;
+    std::vector<std::string> enhancedKnn(int testDocumentIndex) const;
     void runTest();
 
     void printLenghts() const;
     void setLa(double la);
 
+    void setPLabel(bool pLabel);
 
 private:
 
@@ -49,14 +46,16 @@ private:
 
     std::vector< std::vector < std::string > > labels; //labels for each document
     std::vector< std::string > words; //column, all of the words in the corpus
-    std::vector< std::vector < int > > docs; //(0, vector<int>(0)); //row, vector for each document | each initalized to 0
+    std::vector< std::vector <bool > > docs; //(0, vector<int>(0)); //row, vector for each document | each initalized to 0(false)
     std::vector< int > lengths; //lengths of the training documents
 
-    std::vector< std::vector <int> > testDocs;
+    std::vector< std::vector <bool > > testDocs;
+    std::vector< int > testLengths;
 
     static const double K1, b; //constants for BM25 similarity
     long totalLenOfDocs; //total lenght of training documents
     double la;  //average lenght of training documents
+    bool pLabel;
 
     int k; // this is the 'famous' k
     double alpha;
@@ -78,6 +77,8 @@ namespace EnesKilicaslanCommonOperations{
     bool pairCompareStr(const std::pair<std::string, double >& firstElem,
                      const std::pair<std::string, double >& secondElem);
 
+
+    int isDirectory(const char *path);
 
 }
 
