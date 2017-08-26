@@ -171,6 +171,9 @@ int EnhancedKnnInvertedIndex::n(long w) const {
     return wordToDocs.at(w).size();
 }
 
+double EnhancedKnnInvertedIndex::idf(long w) const {
+    return log((N - n(w) + 0.5) / n(w) + 0.5);
+}
 
 
 void EnhancedKnnInvertedIndex::setPLabel(bool pLabel) {
