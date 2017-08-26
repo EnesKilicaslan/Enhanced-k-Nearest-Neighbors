@@ -167,6 +167,11 @@ void EnhancedKnnInvertedIndex::fillTestInvertedIndex() {
 }
 
 
+int EnhancedKnnInvertedIndex::n(long w) const {
+    return wordToDocs.at(w).size();
+}
+
+
 
 void EnhancedKnnInvertedIndex::setPLabel(bool pLabel) {
     EnhancedKnnInvertedIndex::pLabel = pLabel;
