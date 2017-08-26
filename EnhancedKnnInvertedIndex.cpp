@@ -175,6 +175,21 @@ double EnhancedKnnInvertedIndex::idf(long w) const {
     return log((N - n(w) + 0.5) / n(w) + 0.5);
 }
 
+/**
+ * returns term frequency of w in document s
+ * @param w
+ * @param s
+ * @return
+ */
+int EnhancedKnnInvertedIndex::f(long w, vector<std::pair<long, int> > const &s) const {
+    vector<std::pair<long, int> >::const_iterator it;
+
+    for(it = s.begin(); it!=s.end(); ++it)
+        if (it->first == w)
+            return it->second;
+    return 0;
+}
+
 
 void EnhancedKnnInvertedIndex::setPLabel(bool pLabel) {
     EnhancedKnnInvertedIndex::pLabel = pLabel;
