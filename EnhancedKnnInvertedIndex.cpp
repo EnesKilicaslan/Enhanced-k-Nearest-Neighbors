@@ -190,6 +190,33 @@ int EnhancedKnnInvertedIndex::f(long w, vector<std::pair<long, int> > const &s) 
     return 0;
 }
 
+double EnhancedKnnInvertedIndex::fPrime(long w, vector<std::pair<long, int> > const &s) const {
+
+    return ( ((EKCommonOperations::K1 + 1) * f(w,s) ) /
+             (EKCommonOperations::K1 + ( 1 - EKCommonOperations::b + EKCommonOperations::b * EKCommonOperations::lenOfDoc(s) / la )));
+}
+
+
+
+double EnhancedKnnInvertedIndex::similarityBM25(std::vector< pair<long, int> > const &s1, std::vector< pair<long, int> > const &s2) const{
+    double result= 0.0;
+
+    vector<long> words = EKCommonOperations::instersectionWords(s1, s2);
+    //cout << "intersection: ";
+
+    for(int i=0; i<words.size(); ++i) {
+        //cout << "(" << words[i].first << "," << words[i].second << ") ";
+
+        result += fPrime(s1.size(), f(words[i].first, s1)) * fPrime(s2.size(), f(words[i].first, s2)) * idf(words[i].first);
+
+    }
+    //cout << endl;
+    //cout << "result: " << result << endl;
+
+
+    return result;
+}
+
 
 void EnhancedKnnInvertedIndex::setPLabel(bool pLabel) {
     EnhancedKnnInvertedIndex::pLabel = pLabel;
