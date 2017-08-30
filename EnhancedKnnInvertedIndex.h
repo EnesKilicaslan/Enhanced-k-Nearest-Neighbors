@@ -1,16 +1,15 @@
-//
-// Created by Enes Kılıçaslan on 25/08/17.
-//
-
-#ifndef INVERTEDINDEX1_ENHANCEDKNNINVERTEDINDEX_H
-#define INVERTEDINDEX1_ENHANCEDKNNINVERTEDINDEX_H
+#ifndef ENHANCEDKNNINVERTEDINDEX_H
+#define ENHANCEDKNNINVERTEDINDEX_H
 
 #include <iostream>
 #include <vector>
 #include <map>
 
+#include "EnhancedKNNBase.h"
 
-class EnhancedKnnInvertedIndex {
+#define OUT_INVERTED_INDEX_FILE_NAME "train_invertedindex.txt"
+
+class EnhancedKnnInvertedIndex: public EnhancedKNNBase{
 
 public:
     /**
@@ -19,12 +18,27 @@ public:
      * @param k
      * @param trainFileName
      * @param testFileName
+     * @param pLabel: if user asks to predict document labels or just needs to return nearest neighbours
+     *
      */
-    EnhancedKnnInvertedIndex(int k, const std::string &trainFileName, const std::string &testFileName);
+    EnhancedKnnInvertedIndex(int k, const std::string &trainFileName, const std::string &testFileName, bool pLabel);
+
+    void run(bool save);
+
+
+
+
+private:
+
+    void runTest();
 
     //fill the inverted indexes
     void fillInvertedIndexes();
     void fillTestInvertedIndex();
+
+    void saveInvertedIndex() const;
+
+    std::vector<std::string> enhancedKnn(int testDocumentIndex) const;
 
     //enhanced k nearest neighbor methods
     int n(long w) const ;
@@ -33,19 +47,11 @@ public:
     double fPrime(long w, std::vector<std::pair<long, int> > const &s) const;
     double similarityBM25(std::vector< std::pair<long, int> > const &s1, std::vector< std::pair<long, int> > const &s2) const;
 
+    void calculateLa(); //not a regular setter with an argument, it is first calculated in the method
 
 
 
-    //TODO: this will be save? instead of print
-    void printInvertedIndex() const;
 
-    void setPLabel(bool pLabel);
-
-private:
-    void setLa(); //not a regular setter with an argument, it is first calculated in the method
-
-    std::string trainFileName;
-    std::string testFileName;
 
     //data structures to keep training documents and words. AKA: Inverted Index
     /**
@@ -82,16 +88,7 @@ private:
      */
     std::vector< std::vector < std::pair <long, int > > > testDocToWords;
 
-    int k; // this is the 'famous' k: the number of docs will be retrieved
-
-    bool pLabel; // represents label or neighbors
-
-    double alpha;
-
-    long N; //number of documents
-    double la;  //average lenght of training documents
-    long docCounter, totalLenOfDocuments; // to calculate average length la
 };
 
 
-#endif //INVERTEDINDEX1_ENHANCEDKNNINVERTEDINDEX_H
+#endif //ENHANCEDKNNINVERTEDINDEX_H
