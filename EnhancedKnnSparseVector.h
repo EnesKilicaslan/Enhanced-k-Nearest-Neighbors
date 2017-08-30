@@ -26,17 +26,14 @@ private:
 
     void saveVectors() const;
 
-    double similarityBM25(std::vector<bool> const &s1, int len1, std::vector<bool> const &s2, int len2 ) const;
-
-    int n(int wIndex) const; // directly takes index of the word
-    double idf(int wIndex) const; // directly takes index of the word
-    double fPrime(std::vector<bool > s, int len) const;// directly takes index of word
-
     // takes sparse vector that contains a notion for each word in the corpus
     // So its size must be the same as words vector variable field
     std::vector<std::string> enhancedKnn(int testDocumentIndex) const;
 
-
+    int n(int wIndex) const; // directly takes index of the word
+    double idf(int wIndex) const; // directly takes index of the word
+    double fPrime(std::vector<bool > s, int len) const;// directly takes index of word
+    double similarityBM25(std::vector<bool> const &s1, int len1, std::vector<bool> const &s2, int len2 ) const;
 
 
 

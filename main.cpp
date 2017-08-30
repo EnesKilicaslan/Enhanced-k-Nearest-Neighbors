@@ -2,16 +2,14 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <time.h>
-
 
 #include "PreProcess.h"
 //@Ref: stop words http://xpo6.com/list-of-english-stop-words/
 //@Ref: stemming   https://github.com/OleanderSoftware/OleanderStemmingLibrary
 
-
-#include "EnhancedKnnSparseVector.h"
 #include "Common.h"
+#include "EnhancedKnnSparseVector.h"
+#include "EnhancedKnnInvertedIndex.h"
 
 bool areArgumentsValid(map<string, string> const &arguments);
 void printHelp();
@@ -112,11 +110,12 @@ int main(int argc, char** argv)
         eKnn.run(save);
     }
     else{
-        cout << "inverted index"; //inverted index
+        EnhancedKnnInvertedIndex eKnn(kValue, arguments["train"], arguments["test"], pLabel);
+        eKnn.run(save);
     }
 
+    cout << "Process Completed!" << endl;
     printf ("Job finished in %ld minutes!\n", long ( float( clock () - beginTime )/CLOCKS_PER_SEC/60) );
-
 
 }
 
