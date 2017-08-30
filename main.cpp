@@ -1,29 +1,28 @@
 #include <iostream>
-#include <string>
 #include <sstream>
-#include <stdio.h>      /* printf */
 #include <vector>
 #include <map>
-#include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
-#include "PreProcess.h"
+#include <time.h>
 
+
+#include "PreProcess.h"
 //@Ref: stop words http://xpo6.com/list-of-english-stop-words/
 //@Ref: stemming   https://github.com/OleanderSoftware/OleanderStemmingLibrary
 
-#include "EnhancedKnnSparseVector.h"
 
-using namespace std;
+#include "EnhancedKnnSparseVector.h"
+#include "Common.h"
 
 bool areArgumentsValid(map<string, string> const &arguments);
 void printHelp();
 
-int main(int argc, char** argv) {
-
+using namespace std;
+int main(int argc, char** argv)
+{
     map<string, string> arguments;
-    clock_t t;
     int  kValue;
-    bool preProcess = false, save= false, pLabel= false;
-
+    bool preProcess = false, save= false, pLabel= false, useVector= false;
+    clock_t beginTime = clock(); //** start timer to measure the time spent at the end
 
     //** command line operations
     if(argc == 2 && strcmp(argv[1], "--help") == 0) {
@@ -65,14 +64,17 @@ int main(int argc, char** argv) {
         if(arguments["save"] == "true")
             save = true;
 
-    //if preprocess is asked by user
+    //if user asked for labels or just neighbors
     if(arguments.count("pLabel") == 1)
         if(arguments["pLabel"] == "true")
             pLabel = true;
 
-    //** end of command line operations
+    //if user asked for labels or just neighbors
+    if(arguments.count("vector") == 1)
+        if(arguments["vector"] == "true")
+            useVector = true;
 
-    t = clock(); //** start timer to measure the time spent at the end
+    //** end of command line operations
     std::cout << "***Welcome to Enhanced Knn***" << endl << endl;
 
     //the Data neeeds preprocessing
@@ -81,13 +83,13 @@ int main(int argc, char** argv) {
         cout << "Started Preprocessing.." << endl;
         //preprocess the train directory and then
         //create train file named "train_preprocessed"
-        if(EnesKilicaslanCommonOperations::isDirectory(arguments["train"].c_str()) &&
-                EnesKilicaslanCommonOperations::isDirectory(arguments["train"].c_str())){
+        if(EKCommonOperations::isDirectory(arguments["train"].c_str()) &&
+           EKCommonOperations::isDirectory(arguments["train"].c_str())){
 
             //preprocess the train directory and then
             //create train file named "pre_processed_train"
             PreProcess pp = PreProcess(arguments["train"].c_str(),
-                                      "pre_processed_train",
+                                       "pre_processed_train",
                                        arguments["test"].c_str(),
                                        "pre_processed_test");
             pp.run();
@@ -105,33 +107,17 @@ int main(int argc, char** argv) {
     stringstream ss(arguments["k"]);
     ss >> kValue;
 
-    EnhancedKnnSparseVector eKnn( kValue, arguments["train"], arguments["test"]);
-
-    eKnn.setPLabel(pLabel);
-    cout << "Started filling train vectors.." << endl;
-    eKnn.fillVectors();
-    cout << "Filling train vectors is done!" << endl << endl;
-
-    if(save) {
-        cout << "Saving vectors to file named '" << OUT_VEC_FILE_NAME << "' " << endl;
-        eKnn.saveVectors();
-        cout << "Vectors are saved! you can check the file " << OUT_VEC_FILE_NAME << endl << endl;
+    if(useVector) {
+        EnhancedKnnSparseVector eKnn(kValue, arguments["train"], arguments["test"], pLabel);
+        eKnn.run(save);
+    }
+    else{
+        cout << "inverted index"; //inverted index
     }
 
-    cout << "Started filling test vectors.." << endl;
-    eKnn.fillTestVectors();
-    cout << "Filling test vectors is done!" << endl << endl;
+    printf ("Job finished in %ld minutes!\n", long ( float( clock () - beginTime )/CLOCKS_PER_SEC/60) );
 
-    (pLabel) ? cout << "Making prediction.." << endl : cout << "Calculating nearest neighbours.." << endl ;
-    eKnn.runTest();
 
-    //** get time passed from the begining of the application
-    //** and print it in minutes
-    cout << "Operation Completed!" << endl;
-    t = clock() - t;
-    printf ("=> It took %ld minutes!\n",(((long)t)/CLOCKS_PER_SEC)/60);
-
-    return 0;
 }
 
 bool areArgumentsValid(map<string, string> const &arguments){
@@ -153,12 +139,7 @@ bool areArgumentsValid(map<string, string> const &arguments){
         else
             return false;
 
-
-    if(arguments.count("train") == 1 && arguments.count("test") == 1 && arguments.count("k"))
-        return true;
-    else {
-        return false;
-    }
+    return arguments.count("train") == 1 && arguments.count("test") == 1 && arguments.count("k") == 1;
 }
 
 void printHelp(){
@@ -199,4 +180,4 @@ void printHelp(){
          << "\tdefault value for preprocess is false, meaningly wait for preprocessed dataset" << endl
          << "\tps: what we mean by preprocess is stemming and stop word removing" << endl << endl
          << "";
- }
+}

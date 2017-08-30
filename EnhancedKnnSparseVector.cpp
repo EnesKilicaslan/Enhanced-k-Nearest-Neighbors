@@ -1,38 +1,22 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <stdio.h>
-
-#include <sys/types.h>
-#include <dirent.h>
-#include <errno.h>
-
 #include <math.h>
 #include <set>
-#include <sys/stat.h>
 
 #include "EnhancedKnnSparseVector.h"
+#include "Common.h"
 
 using namespace std;
 
-const double EnhancedKnnSparseVector::K1 = 6.0;
-const double EnhancedKnnSparseVector::b  = 0.9;
-
-
-EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, const std::string &trainFileName, const std::string &testFileName)
-        : trainFileName(trainFileName), testFileName(testFileName)  {
-    this->k = k;
-    this->alpha =0.3; //k/10;
-    this->docCounter = 0;
-    this->totalLenOfDocs = 0;
-    this->la = 0.0;
-    this->pLabel = false;
+EnhancedKnnSparseVector::EnhancedKnnSparseVector(int k, const std::string &trainFileName, const std::string &testFileName,
+                                                 bool pLabel)
+        : EnhancedKNNBase(k,trainFileName, testFileName, pLabel) {
 }
-
 
 void EnhancedKnnSparseVector::fillVectors() {
 
-    ifstream input(trainFileName.c_str());
+    ifstream input(this->getTrainFileName().c_str());
     string line;
     getline( input, line ); // skip header
 
@@ -49,7 +33,6 @@ void EnhancedKnnSparseVector::fillVectors() {
         getline(ss_main, tok_main, ' ');
         string tok_lab;
         stringstream ss_lab(tok_main);
-        //cout <<"debug 1" << endl;
 
         while( getline(ss_lab, tok_lab, ',')){
             labels_local.push_back(tok_lab);
@@ -68,38 +51,36 @@ void EnhancedKnnSparseVector::fillVectors() {
             int occurance;
             stringstream ss( tok_main.substr(pos + 1, 1));
             ss >> occurance;
-            int word_index = EnesKilicaslanCommonOperations::contains(&words, word);
+            int word_index = EKCommonOperations::contains(&words, word);
 
             if (word_index >= 0){
                 //cout << "index Debug " << word << " " << word_index << "docs counter " << doc_counter <<  endl;
                 //cout << "lend docs: " << docs.size() << endl;
                 if(occurance > 0)
-                    docs[this->docCounter][word_index] = true;
+                    docs[this->getDocCounter()][word_index] = true;
 
-                lengths[this->docCounter] += occurance;
-                totalLenOfDocs += occurance;
+                lengths[this->getDocCounter()] += occurance;
+                this->setTotalLenOfDocs(this->getTotalLenOfDocs()+ occurance);
 
             } else {
                 words.push_back(word);
 
-                //TODO make it with -1 for efficiency ! And use push back for occurances
                 //!! Attention -- this makes really sparse matrix
                 for( int i=0; i < docs.size(); ++i) //because this is new word, it never occurred before
                     docs[i].push_back(false);  // so make it 0 for the other documents
 
-                docs[this->docCounter][words.size() - 1] = true; // Bag of words (not binary)
-                lengths[this->docCounter] += occurance;
-                totalLenOfDocs += occurance;
+                docs[this->getDocCounter()][words.size() - 1] = true; // Bag of words (not binary)
+                lengths[this->getDocCounter()] += occurance;
+                this->setTotalLenOfDocs(this->getTotalLenOfDocs()+ occurance);
             }
         }
 
         //if(this->docCounter % 1000 == 0)
         //    cout << this->docCounter << endl;
-
-        this->docCounter += 1;
+        this->setDocCounter(getDocCounter() + 1);
     }
 
-    setLa(totalLenOfDocs/docCounter); //calculate average document length once
+    setLa(getTotalLenOfDocs()/getDocCounter()); //calculate average document length once
 }
 
 /**
@@ -123,7 +104,7 @@ void EnhancedKnnSparseVector::saveVectors() const {
     for (row = this->docs.begin(); row != this->docs.end(); ++row)
     {
         for (col = row->begin(); col != row->end(); ++col)
-            fprintf(outFile,"%8s | ", EnesKilicaslanCommonOperations::numberToString(*col).c_str());
+            fprintf(outFile,"%8s | ", to_string(*col).c_str() );
 
         fprintf(outFile,"\n");
     }
@@ -162,7 +143,7 @@ double EnhancedKnnSparseVector::fPrime(std::vector<bool> s, int len) const {
     // because we don't count the words in each document, we don't know f(w,s) which
     // is number of times that w occurs in document s
     // we just ignore it, I mean we take it 1 for each word in any document
-    return ( (K1 + 1)  /  (K1 + ( 1 - b + b * len / la )) );
+    return ( (EKCommonOperations::K1 + 1)  /  (EKCommonOperations::K1 + ( 1 - EKCommonOperations::b + EKCommonOperations::b * len / getLa() )) );
 }
 
 /**
@@ -176,7 +157,7 @@ double EnhancedKnnSparseVector::fPrime(std::vector<bool> s, int len) const {
 **/
 double EnhancedKnnSparseVector::idf(int wIndex) const {
     int nw = n(wIndex);
-    double result = log10(((docCounter - nw + 0.5) / (nw + 0.5)) + 1);
+    double result = log10(((getDocCounter() - nw + 0.5) / (nw + 0.5)) + 1);
 
     /*cout << "*********" << endl;
     cout << "nw: "<< nw << " N: " << docCounter << endl;
@@ -188,28 +169,19 @@ double EnhancedKnnSparseVector::idf(int wIndex) const {
     return result;
 }
 
-//this overloaded method takes directly index of the word
+//this method takes directly index of the word, so equally  the column index of the documents
 int EnhancedKnnSparseVector::n(int indx) const {
     int result = 0;
 
     //here again we don't have a notion about the counts of any word
     //we accept it like it occured once in a document
-    for(int i=0; i< docCounter; ++i) {
+    for(int i=0; i< getDocCounter(); ++i) {
         bool occ = docs[i][indx];
         if (occ)
             result += 1;
     }
 
     return result;
-}
-
-void EnhancedKnnSparseVector::printLenghts() const {
-    /*
-    cout << "Labels:" << endl;
-    vector<string> res = enhancedKnn(docs[2]);
-
-    for(int i=0; i< res.size(); ++i)
-        cout << res[i] << " ";*/
 }
 
 // takes sparse vector that contains a notion for each word in the corpus
@@ -221,21 +193,22 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(int testDocumentIn
     vector<double> tresholds;
     vector<pair<string, double> > classScores; // this will be a copy of map lavelScores in order to traverse easyly
     vector<string> result; // the result labels
+    int index_counter=0;
 
 
     //get the first k documents in order
-    for(int i=0; i<this->k && i < docCounter; ++i)
-        neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocs[testDocumentIndex], testLengths[testDocumentIndex], docs[i], lengths[i])) ) ;
+    for(; index_counter<this->getK() && index_counter < getDocCounter(); ++index_counter)
+        neighborSimPairs.push_back(std::pair<int, double> (index_counter,similarityBM25(testDocs[testDocumentIndex], testLengths[testDocumentIndex], docs[index_counter], lengths[index_counter])) ) ;
 
     //sort documents
-    sort( neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
+    sort( neighborSimPairs.begin(), neighborSimPairs.end(), EKCommonOperations::neighborSimPairCompare);
 
     // traverse all the documents in the training set
     // and replace the new document if there is lower similar document
     // in the k nearest neighbors
-    for(int i=k; i<docCounter ; ++i){
-        neighborSimPairs.push_back(std::pair<int, double> (i,similarityBM25(testDocs[testDocumentIndex], testLengths[testDocumentIndex], docs[i], lengths[i])) ) ;
-        sort( neighborSimPairs.begin(), neighborSimPairs.end(), EnesKilicaslanCommonOperations::pairCompare);
+    for(; index_counter< getDocCounter() ; ++index_counter){
+        neighborSimPairs.push_back(std::pair<int, double> (index_counter,similarityBM25(testDocs[testDocumentIndex], testLengths[testDocumentIndex], docs[index_counter], lengths[index_counter])) ) ;
+        sort( neighborSimPairs.begin(), neighborSimPairs.end(),  EKCommonOperations::neighborSimPairCompare);
         //remove last element
         //we always keep first k documents!
         neighborSimPairs.pop_back();
@@ -243,10 +216,10 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(int testDocumentIn
 
     //user did not asked to calculate label
     //so nearest documents will be retrieved
-    if(!pLabel) {
+    if(!isPLabel()) {
         vector<string> nearest_documents;
         for (int i = 0; i < neighborSimPairs.size(); ++i)
-            nearest_documents.push_back(EnesKilicaslanCommonOperations::numberToString(neighborSimPairs[i].first));
+            nearest_documents.push_back(to_string(neighborSimPairs[i].first));
 
         return nearest_documents;
     }
@@ -297,7 +270,7 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(int testDocumentIn
             if (std::find(labels[labIndex].begin(), labels[labIndex].end(), *it) != labels[labIndex].end()){
                 double sim = neighborSimPairs[j].second;
 
-                labelScores[*it] += pow(sim,alpha);
+                labelScores[*it] += pow(sim, getAlpha());
             }
         }
     }
@@ -323,10 +296,10 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(int testDocumentIn
     //export the map to vector of pairs
     copy(labelScores.begin(),
          labelScores.end(),
-         back_inserter<vector<pair<string, double > > >(classScores));
+         back_inserter<vector<pair<string, double > > > (classScores));
 
     //sort  classes vector in descending order with respect to scores of each class
-    sort(classScores.begin(), classScores.end(), EnesKilicaslanCommonOperations::pairCompareStr);
+    sort(classScores.begin(), classScores.end(), EKCommonOperations::pairCompareStr);
 
     //for (int i1 = 0; i1 < classScores.size(); ++i1) {
     //    cout << classScores[i1].first << " - " << classScores[i1].second << endl;
@@ -347,10 +320,6 @@ std::vector<std::string> EnhancedKnnSparseVector::enhancedKnn(int testDocumentIn
     return result;
 }
 
-void EnhancedKnnSparseVector::setPLabel(bool pLabel) {
-    EnhancedKnnSparseVector::pLabel = pLabel;
-}
-
 void EnhancedKnnSparseVector::runTest(){
 
     ofstream output;
@@ -368,16 +337,11 @@ void EnhancedKnnSparseVector::runTest(){
     }
 }
 
-void EnhancedKnnSparseVector::setLa(double la) {
-    this->la = la;
-}
-
 void EnhancedKnnSparseVector::fillTestVectors(){
-    ifstream input(this->testFileName.c_str());
+    ifstream input(getTestFileName().c_str());
     string line;
     getline( input, line ); // skip header
     int testDocCounter = 0;
-
 
 
     while( getline( input, line ) ) {
@@ -405,7 +369,7 @@ void EnhancedKnnSparseVector::fillTestVectors(){
             int occurance;
             stringstream ss(tok_main.substr(pos + 1, 1));
             ss >> occurance;
-            int word_index = EnesKilicaslanCommonOperations::contains(&words, word);
+            int word_index = EKCommonOperations::contains(&words, word);
 
             if (word_index == -1)
                 continue; //this word has never seen before so, it does not have any effect
@@ -435,47 +399,28 @@ void EnhancedKnnSparseVector::fillTestVectors(){
 
 }
 
-namespace EnesKilicaslanCommonOperations{
 
-    template<typename T, typename A>
-    int contains(vector<T, A> const *v, T x) {
-        typename vector<T, A>::const_iterator it = find(v->begin(), v->end(), x); //iterator
+void EnhancedKnnSparseVector::run(bool save) {
 
-        if (it == v->end())
-            return -1;
-        else
-            return it - v->begin();
+    cout << "Started filling train vectors.." << endl;
+    this->fillVectors();
+    cout << "Filling train vectors is done!" << endl << endl;
+
+    if(save) {
+        cout << "Saving vectors to file named '" << OUT_VEC_FILE_NAME << "' " << endl;
+        this->saveVectors();
+        cout << "Vectors are saved! you can check the file " << OUT_VEC_FILE_NAME << endl << endl;
     }
 
-    template <typename T>
-    string  numberToString(T pNumber)
-    {
-        ostringstream oOStrStream;
-        oOStrStream << pNumber;
-        return oOStrStream.str();
-    }
+    cout << "Started filling test vectors.." << endl;
+    this->fillTestVectors();
+    cout << "Filling test vectors is done!" << endl << endl;
 
-    /**
-     * Comparator for <id, similarity> (int, double) pair
-     * @ref: https://stackoverflow.com/questions/18112773/sorting-a-vector-of-pairs
-     * @return
-     */
-    bool pairCompare(const std::pair<int, double >& firstElem,
-                     const std::pair<int, double >& secondElem) {
-        return firstElem.second > secondElem.second;
-    }
+    (isPLabel()) ? cout << "Making prediction.." << endl : cout << "Calculating nearest neighbours.." << endl ;
+    this->runTest();
 
-    bool pairCompareStr(const std::pair<string, double >& firstElem,
-                        const std::pair<string, double >& secondElem) {
-        return firstElem.second > secondElem.second;
-    }
-
-    int isDirectory(const char *path) {
-        struct stat statbuf;
-        if (stat(path, &statbuf) != 0)
-            return 0;
-        return S_ISDIR(statbuf.st_mode);
-    }
-
+    //** get time passed from the begining of the application
+    //** and print it in minutes
+    cout << "Operation Completed!" << endl;
 
 }

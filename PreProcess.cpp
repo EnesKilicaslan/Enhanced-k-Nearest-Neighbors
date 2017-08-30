@@ -209,12 +209,6 @@ void PreProcess::writeToLibSvmFile(const set<string> &file_names, const string &
     }
     outFile.close();
 
-
-
-
-
-
-
 }
 
 std::string PreProcess::trimContent(const std::string &c) const{

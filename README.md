@@ -90,4 +90,4 @@ If your data needs preprocessing the set **preprocess** to ***true***. But train
 
 - [ ] changing the implementation to multi-threaded
 
-- [ ] writing report explaining what and how  I did
+- [ ] writing report 
