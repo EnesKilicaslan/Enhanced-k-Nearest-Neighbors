@@ -49,6 +49,8 @@ private:
 
     void calculateLa(); //not a regular setter with an argument, it is first calculated in the method
 
+    void printInformation() const; //prints some information about training document
+
 
 
 

@@ -394,7 +394,7 @@ void EnhancedKnnInvertedIndex::runTest(){
 
     for(long i=0; i<testDocToWords.size(); ++i){
 
-        if(i % 10000 == 0){
+        if(i % 10000 == 0 && i != 0){
             t = clock() - t;
             printf ("%ld documents done in %ld minutes!\n",i, (((long)t)/CLOCKS_PER_SEC)/60);
         }
@@ -429,7 +429,18 @@ void EnhancedKnnInvertedIndex::run(bool save) {
     this->fillTestInvertedIndex();
     cout << "Filling test inverted index is done!" << endl << endl;
 
+    printInformation();
+
     (isPLabel()) ? cout << "Making prediction.." << endl : cout << "Calculating nearest neighbours.." << endl ;
     this->runTest();
 
+}
+
+void EnhancedKnnInvertedIndex::printInformation() const{
+    //prints total number, total length of training documents and average of them
+    cout << "************ information about training documents ***************" << endl;
+    cout << "N: " << getN() << endl;
+    cout << "la: " << getLa() << endl;
+    cout << "total len of docs: " << getTotalLenOfDocs()<< endl;
+    cout << "*****************************************************************" << endl << endl;
 }
