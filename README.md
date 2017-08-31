@@ -9,10 +9,7 @@ The Algorithm contains three main steps:
 1. Find the k nearest neighbours according to BM25 similarity
 2. Use the k nearest neighbours weighted vote on candidate classes
 3. Decide the final predictions via the thresholding strategy.
-
-![alt text][eknn]
-
-[eknn]:images/eknn.png "Enhanced K-Nearest Neighbour" (https://nodesource.com/products/nsolid)
+![Alt text](images/eknn.png?raw=true "Enhanced K-Nearest Neighbour")
 
 ## About Project:
 
