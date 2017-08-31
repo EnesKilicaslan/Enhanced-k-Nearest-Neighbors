@@ -42,7 +42,8 @@ that command will create an executable named ***exec***, now you can use the exe
 ./exec --help
 ```
 
-The output would list the command line arguments you can use and explains their meaning
+The output would list the command line arguments you can use and explains their meaning, like in the below picture:
+![Alt text](images/help_ss.png?raw=true "help")
 
 *Secondly*,</br>
 **k** , **train** , **test** arguments are mandatory arguments. So you need to set them correctly in order to use the executable.
