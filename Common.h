@@ -21,7 +21,7 @@ namespace EKCommonOperations
     //these two values are selected with respect to our time limit which is 6 hours for WikiLSHTC dataset
     const static long MAX_N_FOR_RATIO = 11000;
     const static long MAX_N_FOR_DIRECT = 160;
-    const static int MAX_ITERATION = 20;
+    const static int MAX_ITERATION = 50;
 
     int static lenOfDoc(std::vector<std::pair<long, int> > const &s){
         int res = 0;
