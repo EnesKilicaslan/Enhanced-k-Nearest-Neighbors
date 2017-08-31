@@ -10,9 +10,9 @@ The Algorithm contains three main steps:
 2. Use the k nearest neighbours weighted vote on candidate classes
 3. Decide the final predictions via the thresholding strategy.
 
-
 ![alt text][eknn]
-[eknn]:  /Users/eneskilicaslan/Github/Enhanced-k-Nearest-Neighbors/images/eknn.png "Enhanced K-Nearest Neighbour" (https://nodesource.com/products/nsolid)
+
+[eknn]:images/eknn.png "Enhanced K-Nearest Neighbour" (https://nodesource.com/products/nsolid)
 
 ## About Project:
 
