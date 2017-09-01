@@ -27,6 +27,13 @@ The input data might be pre-processed or needs to pre-process, but you need to s
 Because the project is implemented in standard c++, </br>
 a UNIX like Operating System (e.g **Ubuntu, MacOSx, ..**) and a c++ compiler (e.g  g++) are needed.
 
+you can download the code by the following command
+
+```shell
+git clone https://github.com/EnesKilicaslan/Enhanced-k-Nearest-Neighbors.git
+cd Enhanced-k-Nearest-Neighbors
+```
+
 Open a terminal in the directory where you downloaded the source code, then copy and paste the following command to the terminal.
 
 ```shell
