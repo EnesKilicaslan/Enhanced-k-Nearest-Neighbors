@@ -13,7 +13,7 @@ The Algorithm contains three main steps:
 
 ## About Project:
 
-You can use this project either to find nearest neighbours according to BM25 similarity or to predict the label(s) of test documents.
+You can use this project either to find nearest neighbors according to BM25 similarity or to predict the label(s) of test documents.
 
 **Implemented with two different ways:**
 
@@ -25,7 +25,7 @@ The input data might be pre-processed or needs to pre-process, but you need to s
 ## How To Compile And Run:
 
 Because the project is implemented in standard c++, </br>
-a UNIX like Operating System (e.g ***Ubuntu, MacOSx, ..**) and a c++ comiler (e.g  ***g++***) are needed.
+a UNIX like Operating System (e.g **Ubuntu, MacOSx, ..**) and a c++ compiler (e.g  g++) are needed.
 
 Open a terminal in the directory where you downloaded the source code, then copy and paste the following command to the terminal.
 
@@ -111,4 +111,4 @@ I am assuming that you compiled the code without any error and have executable n
 
 - [ ] changing the implementation to multi-threaded
 
-- [ ] writing report
+- [x] writing report
